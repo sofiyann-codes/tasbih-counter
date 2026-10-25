@@ -2,6 +2,10 @@
 
 A beautiful, interactive Tasbih Counter built with React to help users track their daily Dhikr and maintain their spiritual routine.
 
+## 🌐 Live Demo
+
+🚀 **Try it here:** https://tasbih-counter-1ny.pages.dev/
+
 ## ✨ Features
 
 - 📿 **Multiple Dhikr Options** — Choose from SubhanAllah, Alhamdulillah, Allahu Akbar, Astaghfirullah, Salawat, and La ilaha illallah.
@@ -13,8 +17,8 @@ A beautiful, interactive Tasbih Counter built with React to help users track the
 - 🌗 **Dark & Light Themes** — Switch between dark and light modes.
 - 📿 **Bead Mode** — Enjoy a visual Tasbih bead-counting experience.
 - 🔊 **Sound & Vibration** — Optional sound and vibration feedback.
-- 💾 **Local Storage** — Preserve supported counts and preferences in your browser.
-- 📱 **Responsive UI** — Use the application on different screen sizes.
+- 💾 **Local Storage** — Save supported counter data and preferences in your browser.
+- 📱 **Responsive Design** — Use the application on different screen sizes.
 - ⌨️ **Keyboard Shortcuts** — Count and undo using your keyboard.
 
 ## 🛠️ Tech Stack
@@ -33,7 +37,7 @@ Follow these steps to run the project locally.
 
 ### Prerequisites
 
-Install [Node.js](https://nodejs.org/) and Git.
+Install [Node.js](https://nodejs.org/) and [Git](https://git-scm.com/).
 
 ### 1. Clone the Repository
 
@@ -41,7 +45,7 @@ Install [Node.js](https://nodejs.org/) and Git.
 git clone https://github.com/sofiyann-codes/tasbih-counter.git
 ```
 
-### 2. Navigate to the Project
+### 2. Navigate to the Project Directory
 
 ```bash
 cd tasbih-counter
@@ -70,12 +74,12 @@ Open the local URL displayed in your terminal to use the application.
 
 ## 💾 Data Storage
 
-The application uses the browser's LocalStorage API to save supported counter data and preferences locally. Your data remains in your browser rather than being stored in a remote database.
+The application uses the browser's LocalStorage API to save supported counter data and preferences locally. Data is stored in the browser rather than a remote database.
 
-## 🚀 Future Improvements
+## 🔮 Future Improvements
 
 - Daily and weekly Dhikr history
-- More Dhikr options and customization
+- Additional Dhikr options and customization
 - Enhanced statistics and progress reports
 - Optional reminders
 - Installable Progressive Web App (PWA)
@@ -85,6 +89,7 @@ The application uses the browser's LocalStorage API to save supported counter da
 **Mohammed Sofiyan Pasha**
 
 - GitHub: https://github.com/sofiyann-codes
+- Live Project: https://tasbih-counter-1ny.pages.dev/
 
 ## 📄 License
 
