@@ -1,16 +1,91 @@
-# React + Vite
+# 🌙 Tasbih Counter — Daily Dhikr
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A beautiful, interactive Tasbih Counter built with React to help users track their daily Dhikr and maintain their spiritual routine.
 
-Currently, two official plugins are available:
+## ✨ Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- 📿 **Multiple Dhikr Options** — Choose from SubhanAllah, Alhamdulillah, Allahu Akbar, Astaghfirullah, Salawat, and La ilaha illallah.
+- 🔢 **Interactive Counter** — Count your Dhikr using an animated digital counter.
+- 🎯 **Custom Targets** — Set a personal counting target for each Dhikr.
+- ↩️ **Undo Count** — Undo your previous count.
+- 🔄 **Reset Counter** — Reset your current count.
+- 📊 **Progress Tracking** — View your progress toward your target.
+- 🌗 **Dark & Light Themes** — Switch between dark and light modes.
+- 📿 **Bead Mode** — Enjoy a visual Tasbih bead-counting experience.
+- 🔊 **Sound & Vibration** — Optional sound and vibration feedback.
+- 💾 **Local Storage** — Preserve supported counts and preferences in your browser.
+- 📱 **Responsive UI** — Use the application on different screen sizes.
+- ⌨️ **Keyboard Shortcuts** — Count and undo using your keyboard.
 
-## React Compiler
+## 🛠️ Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Frontend:** React
+- **Build Tool:** Vite
+- **Language:** JavaScript
+- **Styling:** CSS
+- **Animations:** Framer Motion
+- **Icons:** Lucide React
+- **Storage:** Browser LocalStorage API
 
-## Expanding the Oxlint configuration
+## ⚙️ Getting Started
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+Follow these steps to run the project locally.
+
+### Prerequisites
+
+Install [Node.js](https://nodejs.org/) and Git.
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/sofiyann-codes/tasbih-counter.git
+```
+
+### 2. Navigate to the Project
+
+```bash
+cd tasbih-counter
+```
+
+### 3. Install Dependencies
+
+```bash
+npm install
+```
+
+### 4. Start the Development Server
+
+```bash
+npm run dev
+```
+
+Open the local URL displayed in your terminal to use the application.
+
+## ⌨️ Keyboard Shortcuts
+
+| Shortcut    | Action                  |
+| ----------- | ----------------------- |
+| `Space`     | Increment the counter   |
+| `Backspace` | Undo the previous count |
+
+## 💾 Data Storage
+
+The application uses the browser's LocalStorage API to save supported counter data and preferences locally. Your data remains in your browser rather than being stored in a remote database.
+
+## 🚀 Future Improvements
+
+- Daily and weekly Dhikr history
+- More Dhikr options and customization
+- Enhanced statistics and progress reports
+- Optional reminders
+- Installable Progressive Web App (PWA)
+
+## 👨‍💻 Author
+
+**Mohammed Sofiyan Pasha**
+
+- GitHub: https://github.com/sofiyann-codes
+
+## 📄 License
+
+This project is open source. A license file can be added to specify the terms under which others may use, modify, and distribute the project.
