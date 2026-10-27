@@ -14,6 +14,8 @@ import {
   Trophy,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Link, useNavigate } from "react-router-dom";
+import api from "./api";
 import "./App.css";
 
 const tasbihList = [
@@ -53,6 +55,30 @@ const tasbihList = [
     meaning: "There is no god but Allah",
     target: 100,
   },
+];
+
+
+const dailyDhikrSchedule = [
+  { time: "Morning (after Fajr)", dhikr: "Ayatul Kursi", slug: "ayatul-kursi", count: "1×", source: "Sahih al-Bukhari 5010" },
+  { time: "Morning", dhikr: "SubhanAllah wa bihamdihi", slug: "subhanallah-wa-bihamdihi", count: "100×", source: "Sahih Muslim 2692" },
+  { time: "Morning", dhikr: "Hasbiyallahu la ilaha illa hu, alayhi tawakkaltu", slug: "hasbiyallahu-la-ilaha-illa-hu-alayhi-tawakkaltu", count: "7×", source: "Abu Dawud 5081" },
+  { time: "After each prayer", dhikr: "SubhanAllah, Alhamdulillah, Allahu Akbar", slug: "subhanallah-alhamdulillah-allahu-akbar", count: "33× each", source: "Sahih Muslim 597" },
+  { time: "After each prayer", dhikr: "Ayatul Kursi", slug: "ayatul-kursi", count: "1×", source: "Al-Nasai, Al-Kubra" },
+  { time: "Evening (after Asr/Maghrib)", dhikr: "SubhanAllah wa bihamdihi", slug: "subhanallah-wa-bihamdihi", count: "100×", source: "Sahih Muslim 2692" },
+  { time: "Before sleeping", dhikr: "Bismika Allahumma amutu wa ahya", slug: "bismika-allahumma-amutu-wa-ahya", count: "1×", source: "Sahih al-Bukhari 6312" },
+  { time: "Before sleeping", dhikr: "Surah Al-Ikhlas, Al-Falaq, An-Nas", slug: "surah-al-ikhlas-al-falaq-an-nas", count: "3× each", source: "Sahih al-Bukhari 5017" },
+  { time: "In difficulty", dhikr: "Hasbunallah wa nimal wakeel", slug: "hasbunallah-wa-nimal-wakeel", count: "As needed", source: "Sahih al-Bukhari 4563" },
+  { time: "Anytime", dhikr: "La hawla wa la quwwata illa billah", slug: "la-hawla-wa-la-quwwata-illa-billah", count: "As needed", source: "Sahih al-Bukhari 6384" },
+  { time: "Seeking forgiveness", dhikr: "Astaghfirullah", slug: "astaghfirullah", count: "As often as possible", source: "Sahih al-Bukhari 6307" },
+];
+
+const situationalDhikr = [
+  { situation: "Starting any task", arabic: "بِسْمِ اللَّهِ", transliteration: "Bismillah", meaning: "In the name of Allah" },
+  { situation: "Seeing something good", arabic: "سُبْحَانَ اللَّهِ", transliteration: "SubhanAllah", meaning: "Glory be to Allah" },
+  { situation: "Expressing gratitude", arabic: "الْحَمْدُ لِلَّهِ", transliteration: "Alhamdulillah", meaning: "All praise is for Allah" },
+  { situation: "Expressing intention", arabic: "إِنْ شَاءَ اللَّهُ", transliteration: "Insha Allah", meaning: "If Allah wills" },
+  { situation: "Hearing bad news", arabic: "إِنَّا لِلَّهِ", transliteration: "Inna lillahi", meaning: "To Allah we belong and to Him we return" },
+  { situation: "Seeking forgiveness", arabic: "أَسْتَغْفِرُ اللَّهَ", transliteration: "Astaghfirullah", meaning: "I seek forgiveness from Allah" },
 ];
 
 const STORAGE_KEY = "tasbih-counter-data";
@@ -101,8 +127,22 @@ function loadData() {
   }
 }
 
-function App() {
+function HomePage() {
+  const navigate = useNavigate();
   const [initialData] = useState(loadData);
+  const [authToken] = useState(() => localStorage.getItem("tasbih-token"));
+  const [syncReady, setSyncReady] = useState(
+    () => !localStorage.getItem("tasbih-token")
+  );
+  const [syncMessage, setSyncMessage] = useState("");
+  const [profile, setProfile] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("tasbih-user")) || null;
+    } catch {
+      return null;
+    }
+  });
+  const [showProfile, setShowProfile] = useState(false);
 
   const [selected, setSelected] = useState(0);
   const [counts, setCounts] = useState(initialData.counts);
@@ -134,6 +174,101 @@ function App() {
   const progress = Math.min((count / target) * 100, 100);
   const completed = count >= target;
 
+  // Verify the token and load the current user's profile from the backend.
+  useEffect(() => {
+    const token = localStorage.getItem("tasbih-token");
+
+    if (!token) {
+      setProfile(null);
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    async function loadProfile() {
+      try {
+        const response = await api.get("/auth/me");
+        if (cancelled) return;
+
+        setProfile(response.data.user);
+        localStorage.setItem(
+          "tasbih-user",
+          JSON.stringify(response.data.user)
+        );
+      } catch (error) {
+        if (cancelled) return;
+
+        if (error.response?.status === 401) {
+          localStorage.removeItem("tasbih-token");
+          localStorage.removeItem("tasbih-user");
+          setProfile(null);
+        } else {
+          console.error("Unable to load account profile:", error);
+        }
+      }
+    }
+
+    loadProfile();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  function handleLogout() {
+    localStorage.removeItem("tasbih-token");
+    localStorage.removeItem("tasbih-user");
+    setProfile(null);
+    setShowProfile(false);
+    window.location.assign("/");
+  }
+
+  // When a logged-in user opens the counter, load their saved data from MongoDB.
+  // Visitors without an account continue using local storage only.
+  useEffect(() => {
+    if (!authToken) {
+      setSyncReady(true);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadRemoteData() {
+      try {
+        const response = await api.get("/tasbih");
+        if (cancelled) return;
+
+        const data = response.data?.tasbihData || {};
+        const isToday = data.savedDate === getToday();
+
+        setCounts(data.counts && typeof data.counts === "object" ? data.counts : {});
+        setCustomTargets(
+          data.customTargets && typeof data.customTargets === "object"
+            ? data.customTargets
+            : {}
+        );
+        if (typeof data.darkMode === "boolean") setDarkMode(data.darkMode);
+        setTotalToday(isToday ? Number(data.totalToday) || 0 : 0);
+        if (typeof data.soundEnabled === "boolean") setSoundEnabled(data.soundEnabled);
+        if (typeof data.vibrationEnabled === "boolean") setVibrationEnabled(data.vibrationEnabled);
+        if (typeof data.beadMode === "boolean") setBeadMode(data.beadMode);
+
+        setSyncMessage("Progress synced to your account");
+        setSyncReady(true);
+      } catch (error) {
+        if (cancelled) return;
+        console.error("Unable to load saved Tasbih progress:", error);
+        setSyncMessage("Could not load cloud progress");
+        // Do not overwrite cloud data if loading it failed.
+      }
+    }
+
+    loadRemoteData();
+    return () => {
+      cancelled = true;
+    };
+  }, [authToken]);
+
   useEffect(() => {
     try {
       localStorage.setItem(
@@ -153,6 +288,44 @@ function App() {
       console.error("Unable to save Tasbih data:", error);
     }
   }, [
+    counts,
+    customTargets,
+    darkMode,
+    totalToday,
+    soundEnabled,
+    vibrationEnabled,
+    beadMode,
+  ]);
+
+  // Debounce cloud saves so rapid taps do not create a request for every click.
+  useEffect(() => {
+    if (!authToken || !syncReady) return;
+
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        await api.put("/tasbih", {
+          tasbihData: {
+            counts,
+            customTargets,
+            darkMode,
+            totalToday,
+            savedDate: getToday(),
+            soundEnabled,
+            vibrationEnabled,
+            beadMode,
+          },
+        });
+        setSyncMessage("Progress synced to your account");
+      } catch (error) {
+        console.error("Unable to save Tasbih progress:", error);
+        setSyncMessage("Cloud save failed; progress remains on this device");
+      }
+    }, 600);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [
+    authToken,
+    syncReady,
     counts,
     customTargets,
     darkMode,
@@ -409,10 +582,44 @@ function App() {
         </a>
 
         <div className="nav-actions">
+          {profile ? (
+            <div className="profile-menu">
+              <button
+                type="button"
+                className="action-button auth-nav-button"
+                onClick={() => setShowProfile((previous) => !previous)}
+                aria-expanded={showProfile}
+                aria-haspopup="true"
+              >
+                Account
+              </button>
+
+              {showProfile && (
+                <div className="profile-dropdown">
+                  <strong>{profile.name}</strong>
+                  <span>{profile.email}</span>
+                  <button type="button" onClick={handleLogout}>
+                    Log out
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link to="/login" className="action-button auth-nav-button">
+              Log in
+            </Link>
+          )}
+
           <span className="status">
             <span className="status-dot" />
             YOUR MOMENT OF PEACE
           </span>
+
+          {authToken && syncMessage && (
+            <span className="section-label" role="status" aria-live="polite">
+              {syncMessage}
+            </span>
+          )}
 
           <button
             className="icon-button"
@@ -715,15 +922,94 @@ function App() {
         </article>
       </section>
 
+
+      <section className="dhikr-library">
+        <div className="library-heading">
+          <span className="section-label">YOUR DAILY ROUTINE</span>
+          <h2>Your Dhikr List by Time of Day</h2>
+          <p>Keep your daily remembrance organized throughout the day.</p>
+        </div>
+
+        <div className="dhikr-table-wrap">
+          <table className="dhikr-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Dhikr</th>
+                <th>Count</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              {dailyDhikrSchedule.map((item, index) => (
+                <tr key={`${item.time}-${index}`}>
+                  <td>{item.time}</td>
+                  <td className="dhikr-table-name">
+                    <Link
+                      className="dhikr-link"
+                      to={`/dhikr/${item.slug}`}
+                      onClick={(event) => {
+                        if (!localStorage.getItem("tasbih-token")) {
+                          event.preventDefault();
+                          navigate("/login", {
+                            state: {
+                              from: `/dhikr/${item.slug}`,
+                              loginFirst: true,
+                            },
+                          });
+                        }
+                      }}
+                    >
+                      {item.dhikr}
+                    </Link>
+                  </td>
+                  <td><span className="dhikr-count-badge">{item.count}</span></td>
+                  <td className="dhikr-source">{item.source}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="dhikr-library situations-section">
+        <div className="library-heading">
+          <span className="section-label">REMEMBRANCE IN EVERY MOMENT</span>
+          <h2>Dhikr for Specific Situations</h2>
+          <p>Short remembrances for everyday moments.</p>
+        </div>
+
+        <div className="situational-grid">
+          {situationalDhikr.map((item) => (
+            <article className="situation-card" key={item.situation}>
+              <span className="situation-label">{item.situation}</span>
+              <div className="situation-arabic" lang="ar" dir="rtl">{item.arabic}</div>
+              <h3>{item.transliteration}</h3>
+              <p>{item.meaning}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
       <footer className="footer">
         <span>بِسْمِ اللَّهِ</span>
         <p>Made with intention, for remembrance.</p>
-        <p>Built by <a target="_blank" href="https://github.com/sofiyann-codes" class="text-accent font-medium hover:underline">Mohammed Sofiyan pasha</a></p>
+        <p>
+          Built by{" "}
+          <a href="https://sofiyann-codes.github.io/" target="_blank" rel="noopener noreferrer">
+            Mohammed Sofiyan Pasha
+          </a>
+        </p>
+        <p>
+          <a href="https://github.com/sofiyann-codes/tasbih-counter" target="_blank" rel="noopener noreferrer">
+            View Source Code on GitHub
+          </a>
+        </p>
         <span>۞</span>
       </footer>
     </main>
   );
 }
 
-export default App;
+export default HomePage;
 
