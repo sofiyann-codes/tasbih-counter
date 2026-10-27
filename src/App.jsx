@@ -718,6 +718,7 @@ function App() {
       <footer className="footer">
         <span>بِسْمِ اللَّهِ</span>
         <p>Made with intention, for remembrance.</p>
+        <p>Built by <a target="_blank" href="https://github.com/sofiyann-codes" class="text-accent font-medium hover:underline">Mohammed Sofiyan pasha</a></p>
         <span>۞</span>
       </footer>
     </main>
