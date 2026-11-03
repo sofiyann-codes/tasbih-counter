@@ -77,7 +77,7 @@ const situationalDhikr = [
   { situation: "Seeing something good", arabic: "سُبْحَانَ اللَّهِ", transliteration: "SubhanAllah", meaning: "Glory be to Allah" },
   { situation: "Expressing gratitude", arabic: "الْحَمْدُ لِلَّهِ", transliteration: "Alhamdulillah", meaning: "All praise is for Allah" },
   { situation: "Expressing intention", arabic: "إِنْ شَاءَ اللَّهُ", transliteration: "Insha Allah", meaning: "If Allah wills" },
-  { situation: "Hearing bad news", arabic: "إِنَّا لِلَّهِ", transliteration: "Inna lillahi", meaning: "To Allah we belong and to Him we return" },
+  { situation: "Hearing bad news", arabic: "إِنَّا لِلّهِ وَإِنَّـا إِلَيْهِ رَاجِعونَ", transliteration: "Inna lillahi wa inna ilayhi raji'un", meaning: "To Allah we belong and to Him we return" },
   { situation: "Seeking forgiveness", arabic: "أَسْتَغْفِرُ اللَّهَ", transliteration: "Astaghfirullah", meaning: "I seek forgiveness from Allah" },
 ];
 
