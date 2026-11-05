@@ -212,3 +212,38 @@
     left: 18px;
   }
 }
+
+.auth-link-button {
+  background: none;
+  border: none;
+  color: #d9b56b;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 5px 0;
+}
+
+.auth-link-button:hover {
+  color: #f0d18b;
+  text-decoration: underline;
+}
+
+.auth-success {
+  color: #75d6a2;
+  background: rgba(117, 214, 162, 0.08);
+  border: 1px solid rgba(117, 214, 162, 0.25);
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 13px;
+  margin-bottom: 18px;
+  line-height: 1.5;
+}
+
+.auth-error {
+  color: #ff8e8e;
+  background: rgba(255, 100, 100, 0.08);
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+}
