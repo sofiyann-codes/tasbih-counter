@@ -9,6 +9,10 @@ const auth = require("../middleware/auth");
 
 const router = express.Router();
 
+// ==========================================
+// TOKEN
+// ==========================================
+
 function createToken(userId) {
   return jwt.sign(
     { userId: userId.toString() },
@@ -16,6 +20,10 @@ function createToken(userId) {
     { expiresIn: "1d" }
   );
 }
+
+// ==========================================
+// PUBLIC USER DATA
+// ==========================================
 
 function publicUser(user) {
   return {
@@ -25,7 +33,10 @@ function publicUser(user) {
   };
 }
 
-// Email configuration
+// ==========================================
+// EMAIL CONFIGURATION
+// ==========================================
+
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -34,7 +45,10 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Hash OTP using a server-side secret
+// ==========================================
+// HASH OTP / RESET TOKEN
+// ==========================================
+
 function hashValue(value) {
   return crypto
     .createHmac("sha256", process.env.JWT_SECRET)
@@ -42,7 +56,10 @@ function hashValue(value) {
     .digest("hex");
 }
 
+// ==========================================
 // REGISTER
+// ==========================================
+
 router.post("/register", async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -107,8 +124,9 @@ router.post("/register", async (req, res) => {
       token: createToken(user._id),
       user: publicUser(user),
     });
+
   } catch (error) {
-    console.error("Registration error:", error.message);
+    console.error("Registration error:", error);
 
     return res.status(500).json({
       message: "Unable to create account right now.",
@@ -116,7 +134,10 @@ router.post("/register", async (req, res) => {
   }
 });
 
+// ==========================================
 // LOGIN
+// ==========================================
+
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -151,8 +172,9 @@ router.post("/login", async (req, res) => {
       token: createToken(user._id),
       user: publicUser(user),
     });
+
   } catch (error) {
-    console.error("Login error:", error.message);
+    console.error("Login error:", error);
 
     return res.status(500).json({
       message: "Unable to log in right now.",
@@ -160,7 +182,10 @@ router.post("/login", async (req, res) => {
   }
 });
 
+// ==========================================
 // FORGOT PASSWORD - SEND OTP
+// ==========================================
+
 router.post("/forgot-password", async (req, res) => {
   try {
     const { email } = req.body;
@@ -197,6 +222,7 @@ router.post("/forgot-password", async (req, res) => {
       });
     }
 
+    // Generate a six-digit OTP.
     const otp = crypto.randomInt(100000, 1000000).toString();
 
     user.resetOtpHash = hashValue(otp);
@@ -209,28 +235,51 @@ router.post("/forgot-password", async (req, res) => {
 
     await user.save();
 
+    // Send OTP email.
     try {
       await transporter.sendMail({
         from: `"Tasbih Counter" <${process.env.EMAIL_USER}>`,
         to: user.email,
         subject: "Your Tasbih Counter Password Reset OTP",
+
         text: `Your password reset OTP is ${otp}. It expires in 5 minutes. Do not share this code with anyone.`,
+
         html: `
           <div style="font-family:Arial,sans-serif;padding:25px;color:#12352a">
             <h2>Tasbih Counter</h2>
+
             <p>You requested to reset your password.</p>
-            <h1 style="letter-spacing:8px;color:#b58b3b">${otp}</h1>
+
+            <h1 style="letter-spacing:8px;color:#b58b3b">
+              ${otp}
+            </h1>
+
             <p>This code expires in 5 minutes.</p>
-            <p>If you did not request this, please ignore this email.</p>
+
+            <p>
+              If you did not request this, please ignore this email.
+            </p>
           </div>
         `,
       });
+
+      console.log("OTP email sent successfully to:", user.email);
+
     } catch (emailError) {
-      console.error("OTP email error:", emailError.message);
+      // Detailed diagnostic logging.
+      console.error("========== OTP EMAIL ERROR ==========");
+      console.error("Error message:", emailError.message);
+      console.error("Error code:", emailError.code);
+      console.error("Error command:", emailError.command);
+      console.error("Error response:", emailError.response);
+      console.error("Full error:", emailError);
+      console.error("=====================================");
 
       user.resetOtpHash = undefined;
       user.resetOtpExpires = undefined;
       user.resetOtpAttempts = 0;
+      user.resetOtpLastSent = undefined;
+
       await user.save();
 
       return res.status(500).json({
@@ -239,8 +288,9 @@ router.post("/forgot-password", async (req, res) => {
     }
 
     return res.json({ message: genericMessage });
+
   } catch (error) {
-    console.error("Forgot password error:", error.message);
+    console.error("Forgot password error:", error);
 
     return res.status(500).json({
       message: "Unable to process your request.",
@@ -248,7 +298,10 @@ router.post("/forgot-password", async (req, res) => {
   }
 });
 
+// ==========================================
 // VERIFY OTP
+// ==========================================
+
 router.post("/verify-otp", async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -280,9 +333,11 @@ router.post("/verify-otp", async (req, res) => {
       });
     }
 
+    // Maximum five attempts.
     if (user.resetOtpAttempts >= 5) {
       user.resetOtpHash = undefined;
       user.resetOtpExpires = undefined;
+
       await user.save();
 
       return res.status(429).json({
@@ -290,10 +345,10 @@ router.post("/verify-otp", async (req, res) => {
       });
     }
 
-    if (
-      hashValue(otp) !== user.resetOtpHash
-    ) {
+    // Compare hashed OTP.
+    if (hashValue(otp) !== user.resetOtpHash) {
       user.resetOtpAttempts += 1;
+
       await user.save();
 
       return res.status(400).json({
@@ -301,7 +356,7 @@ router.post("/verify-otp", async (req, res) => {
       });
     }
 
-    // Generate a short-lived password reset token.
+    // Generate password reset token.
     const resetToken = crypto.randomBytes(32).toString("hex");
 
     user.resetTokenHash = hashValue(resetToken);
@@ -318,8 +373,9 @@ router.post("/verify-otp", async (req, res) => {
       message: "OTP verified successfully.",
       resetToken,
     });
+
   } catch (error) {
-    console.error("OTP verification error:", error.message);
+    console.error("OTP verification error:", error);
 
     return res.status(500).json({
       message: "Unable to verify OTP.",
@@ -327,7 +383,10 @@ router.post("/verify-otp", async (req, res) => {
   }
 });
 
+// ==========================================
 // RESET PASSWORD
+// ==========================================
+
 router.post("/reset-password", async (req, res) => {
   try {
     const { email, resetToken, newPassword } = req.body;
@@ -353,7 +412,9 @@ router.post("/reset-password", async (req, res) => {
 
     const user = await User.findOne({
       email: email.trim().toLowerCase(),
-    }).select("+resetTokenHash +resetTokenExpires +password");
+    }).select(
+      "+resetTokenHash +resetTokenExpires +password"
+    );
 
     if (
       !user ||
@@ -367,12 +428,14 @@ router.post("/reset-password", async (req, res) => {
       });
     }
 
+    // Hash new password.
     user.password = await bcrypt.hash(newPassword, 12);
 
-    // Clear all reset credentials after success.
+    // Clear all reset credentials.
     user.resetOtpHash = undefined;
     user.resetOtpExpires = undefined;
     user.resetOtpAttempts = 0;
+    user.resetOtpLastSent = undefined;
     user.resetTokenHash = undefined;
     user.resetTokenExpires = undefined;
 
@@ -381,8 +444,9 @@ router.post("/reset-password", async (req, res) => {
     return res.json({
       message: "Password reset successfully. Please log in.",
     });
+
   } catch (error) {
-    console.error("Password reset error:", error.message);
+    console.error("Password reset error:", error);
 
     return res.status(500).json({
       message: "Unable to reset password.",
@@ -390,7 +454,10 @@ router.post("/reset-password", async (req, res) => {
   }
 });
 
+// ==========================================
 // CURRENT LOGGED-IN USER
+// ==========================================
+
 router.get("/me", auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
@@ -404,13 +471,18 @@ router.get("/me", auth, async (req, res) => {
     return res.json({
       user: publicUser(user),
     });
+
   } catch (error) {
-    console.error("Profile error:", error.message);
+    console.error("Profile error:", error);
 
     return res.status(500).json({
       message: "Unable to load your account.",
     });
   }
 });
+
+// ==========================================
+// EXPORT ROUTER
+// ==========================================
 
 module.exports = router;
